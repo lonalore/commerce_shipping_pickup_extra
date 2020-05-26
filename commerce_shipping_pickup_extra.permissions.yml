@@ -1,0 +1,20 @@
+add pickup item entities:
+  title: 'Create new Pickup item entities'
+
+administer pickup item entities:
+  title: 'Administer Pickup item entities'
+  description: 'Allow to access the administration form to configure Pickup item entities.'
+  restrict access: true
+
+delete pickup item entities:
+  title: 'Delete Pickup item entities'
+
+edit pickup item entities:
+  title: 'Edit Pickup item entities'
+
+view published pickup item entities:
+  title: 'View published Pickup item entities'
+
+view unpublished pickup item entities:
+  title: 'View unpublished Pickup item entities'
+

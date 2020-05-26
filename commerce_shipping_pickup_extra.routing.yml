@@ -1,0 +1,19 @@
+commerce_shipping_pickup_extra.pickup_item_foxpost_update_controller_update:
+  path: '/admin/config/services/pickup-foxpost'
+  defaults:
+    _form: '\Drupal\commerce_shipping_pickup_extra\Form\PickupFoxpostUpdateForm'
+    _title: 'Pickup - Foxpost'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE
+
+commerce_shipping_pickup_extra.pickup_item_mpl_update_controller_update:
+  path: '/admin/config/services/pickup-mpl'
+  defaults:
+    _form: '\Drupal\commerce_shipping_pickup_extra\Form\PickupMplUpdateForm'
+    _title: 'Pickup - MPL'
+  requirements:
+    _permission: 'access administration pages'
+  options:
+    _admin_route: TRUE

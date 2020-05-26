@@ -1,0 +1,11 @@
+<?php
+
+/**
+ * Implements hook_update_N().
+ */
+function commerce_shipping_pickup_extra_update_8001(&$sandbox) {
+  \Drupal::entityTypeManager()->clearCachedDefinitions();
+  \Drupal::entityDefinitionUpdateManager()
+    ->installEntityType(\Drupal::entityTypeManager()
+      ->getDefinition('pickup_item'));
+}

@@ -1,0 +1,222 @@
+<?php
+
+/**
+ * @file
+ * Contains
+ */
+
+use Drupal\Component\Serialization\Json;
+use Drupal\Core\File\FileSystemInterface;
+use PhpOffice\PhpSpreadsheet\IOFactory;
+
+/**
+ * Implements hook_commerce_checkout_pane_info_alter();
+ */
+function commerce_shipping_pickup_extra_commerce_checkout_pane_info_alter(array &$panes) {
+  if (isset($panes['pickup_capable_shipping_information'])) {
+    $panes['pickup_capable_shipping_information']['class'] = 'Drupal\commerce_shipping_pickup_extra\Plugin\Commerce\CheckoutPane\AlteredPickupCapableShippingInformation';
+  }
+}
+
+/**
+ * Implements hook_commerce_inline_form_info_alter();
+ */
+function commerce_shipping_pickup_extra_commerce_inline_form_info_alter(array &$forms) {
+  if (isset($forms['pickup_profile'])) {
+    $forms['pickup_profile']['class'] = 'Drupal\commerce_shipping_pickup_extra\Plugin\Commerce\InlineForm\AlteredPickupProfile';
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function commerce_shipping_pickup_extra_cron() {
+  // We access our configuration.
+  $cron_config = \Drupal::config('commerce_shipping_pickup_extra.settings');
+
+  // Default to an hourly interval. Of course, cron has to be running at least
+  // hourly for this to work.
+  $interval = $cron_config->get('interval');
+  $interval = !empty($interval) ? $interval : 86400;
+
+  // We usually don't want to act every time cron runs (which could be every
+  // minute) so keep a time for the next run in the site state.
+  $next_execution = \Drupal::state()
+    ->get('commerce_shipping_pickup_extra.next_execution', 0);
+
+  if (\Drupal::time()->getRequestTime() >= $next_execution) {
+    // This is a silly example of a cron job.
+    // It just makes it obvious that the job has run without
+    // making any changes to your database.
+    \Drupal::logger('commerce_shipping_pickup_extra')
+      ->notice('commerce_shipping_pickup_extra ran');
+
+//    _commerce_shipping_pickup_extra_update_foxpost();
+//    _commerce_shipping_pickup_extra_update_mpl_post_office();
+//    _commerce_shipping_pickup_extra_update_mpl_pickup_point();
+
+    \Drupal::state()
+      ->set('commerce_shipping_pickup_extra.next_execution', \Drupal::time()
+          ->getRequestTime() + $interval);
+  }
+}
+
+function _commerce_shipping_pickup_extra_update_foxpost() {
+  $url = 'https://www1.foxpost.hu/foxpost_terminals.json';
+
+  $storage = \Drupal::entityTypeManager()->getStorage('pickup_item');
+  $client = \Drupal::httpClient();
+  $response = $client->request('GET', $url);
+  $content = $response->getBody();
+
+  $items = Json::decode($content);
+
+  if (!empty($items)) {
+    /** @var \Drupal\commerce_shipping_pickup_extra\Entity\PickupItemInterface[] $entities */
+    $entities = $storage->loadByProperties([
+      'method' => 'pickup_foxpost',
+    ]);
+
+    foreach ($entities as $entity) {
+      $entity->delete();
+    }
+
+    foreach ($items as $item) {
+      $parts = explode(' ', $item['address'], 3);
+
+      $entity = $storage->create();
+      $entity->setName($item['name']);
+      $entity->set('method', 'pickup_foxpost');
+      $entity->set('address', [
+        [
+          'country_code'  => 'HU',
+          'organization'  => $item['name'],
+          'address_line1' => $parts[2],
+          'locality'      => $parts[1],
+          'postal_code'   => $parts[0],
+        ],
+      ]);
+      $entity->save();
+    }
+  }
+}
+
+function _commerce_shipping_pickup_extra_update_mpl_post_office() {
+  $url = 'https://www.posta.hu/static/internet/download/Allando_postai_szolgaltatohelyek.xlsx';
+
+  $storage = \Drupal::entityTypeManager()->getStorage('pickup_item');
+
+  $items = _commerce_shipping_pickup_extra_xlsx_to_array($url);
+
+  if (!empty($items)) {
+    array_shift($items);
+
+    /** @var \Drupal\commerce_shipping_pickup_extra\Entity\PickupItemInterface[] $entities */
+    $entities = $storage->loadByProperties([
+      'method' => 'pickup_mpl_postpoint',
+    ]);
+
+    foreach ($entities as $entity) {
+      $entity->delete();
+    }
+
+    foreach ($items as $item) {
+      if (empty($item[0]) || empty($item[3]) || empty($item[4])) {
+        continue;
+      }
+
+      $name = $item[0] . ' (' . $item[3] . ' ' . $item[0] . ', ' . $item[4] . ')';
+
+      $entity = $storage->create();
+      $entity->setName($name);
+      $entity->set('method', 'pickup_mpl_postpoint');
+      $entity->set('address', [
+        [
+          'country_code'  => 'HU',
+          'organization'  => $item[2],
+          'address_line1' => $item[4],
+          'locality'      => $item[0],
+          'postal_code'   => $item[3],
+        ],
+      ]);
+      $entity->save();
+    }
+  }
+}
+
+function _commerce_shipping_pickup_extra_update_mpl_pickup_point() {
+  $url = 'https://www.posta.hu/static/internet/download/Csomagautomata_lista_GPS_koordinatakkal.xlsx';
+
+  $storage = \Drupal::entityTypeManager()->getStorage('pickup_item');
+
+  $items = _commerce_shipping_pickup_extra_xlsx_to_array($url);
+
+  if (!empty($items)) {
+    array_shift($items);
+
+    /** @var \Drupal\commerce_shipping_pickup_extra\Entity\PickupItemInterface[] $entities */
+    $entities = $storage->loadByProperties([
+      'method' => 'pickup_mpl_parcel_machine',
+    ]);
+
+    foreach ($entities as $entity) {
+      $entity->delete();
+    }
+
+    foreach ($items as $item) {
+      if (empty($item[0]) || empty($item[1]) || empty($item[2]) || empty($item[3]) || empty($item[4]) || empty($item[5])) {
+        continue;
+      }
+
+      $name = $item[4] . ' (' . $item[0] . ' ' . $item[1] . ', ' . $item[5] . ' ' . $item[6] . ' ' . $item[7] . ')';
+
+      $entity = $storage->create();
+      $entity->setName($name);
+      $entity->set('method', 'pickup_mpl_parcel_machine');
+      $entity->set('address', [
+        [
+          'country_code'  => 'HU',
+          'organization'  => $item[4],
+          'address_line1' => $item[5] . ' ' . $item[6] . ' ' . $item[7],
+          'locality'      => $item[1],
+          'postal_code'   => $item[0],
+        ],
+      ]);
+      $entity->save();
+    }
+  }
+}
+
+/**
+ * @param $url
+ *
+ * @return array
+ * @throws \GuzzleHttp\Exception\GuzzleException
+ * @throws \PhpOffice\PhpSpreadsheet\Exception
+ * @throws \PhpOffice\PhpSpreadsheet\Reader\Exception
+ */
+function _commerce_shipping_pickup_extra_xlsx_to_array($url) {
+  $client = \Drupal::httpClient();
+  $response = $client->request('GET', $url);
+  $content = $response->getBody();
+
+  $rows = [];
+
+  if (!empty($content)) {
+    $path = 'temporary://mpl.xlsx';
+
+    $uri = \Drupal::service('file_system')->saveData($content, $path, FileSystemInterface::EXISTS_REPLACE);
+
+    if ($uri) {
+      $uri = \Drupal::service('file_system')->realpath($uri);
+
+      $reader = IOFactory::createReader('Xlsx');
+      $spreadsheet = $reader->load($uri);
+
+      $worksheet = $spreadsheet->getActiveSheet();
+      $rows = $worksheet->toArray();
+    }
+  }
+
+  return $rows;
+}

@@ -1,0 +1,7 @@
+name: 'Commerce Shipping Pickup Extra'
+type: module
+core_version_requirement: ^8.7.7 || ^9
+description: 'Provides multiple pickup shipping methods.'
+package: 'Commerce'
+dependencies:
+  - commerce_shipping_pickup:commerce_shipping_pickup

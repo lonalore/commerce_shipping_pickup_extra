@@ -1,0 +1,21 @@
+# Pickup item routing definition
+pickup_item.settings_tab:
+  route_name: pickup_item.settings
+  title: 'Settings'
+  base_route: pickup_item.settings
+
+entity.pickup_item.canonical:
+  route_name: entity.pickup_item.canonical
+  base_route: entity.pickup_item.canonical
+  title: 'View'
+
+entity.pickup_item.edit_form:
+  route_name: entity.pickup_item.edit_form
+  base_route: entity.pickup_item.canonical
+  title: 'Edit'
+
+entity.pickup_item.delete_form:
+  route_name:  entity.pickup_item.delete_form
+  base_route:  entity.pickup_item.canonical
+  title: Delete
+  weight: 10

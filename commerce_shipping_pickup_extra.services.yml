@@ -1,0 +1,7 @@
+services:
+  commerce_shipping.profile_field_copy:
+    class: Drupal\commerce_shipping_pickup_extra\AlteredProfileFieldCopyWithoutPickup
+    arguments: ['@current_user']
+
+  commerce_shipping_prickup.default_profil_mapper:
+    class: Drupal\commerce_shipping_pickup_extra\AlteredPickupProfileMapper

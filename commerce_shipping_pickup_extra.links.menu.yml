@@ -1,0 +1,25 @@
+# Pickup item menu items definition
+entity.pickup_item.collection:
+  title: 'Pickup item list'
+  description: 'List Pickup item entities'
+  route_name: 'entity.pickup_item.collection'
+  parent: 'commerce.admin_commerce'
+  weight: 100
+
+#pickup_item.admin.structure.settings:
+#  title: 'Pickup item settings'
+#  description: 'Configure Pickup item entities'
+#  route_name: 'pickup_item.settings'
+#  parent: 'commerce.admin_commerce'
+
+commerce_shipping_pickup_extra.pickup_item_foxpost_update_controller_update:
+  title: 'Pickup - Foxpost'
+  description: 'Update Foxpost pickup points'
+  route_name: 'commerce_shipping_pickup_extra.pickup_item_foxpost_update_controller_update'
+  parent: 'system.admin_config_services'
+
+commerce_shipping_pickup_extra.pickup_item_mpl_update_controller_update:
+  title: 'Pickup - MPL'
+  description: 'Update MPL pickup points'
+  route_name: 'commerce_shipping_pickup_extra.pickup_item_mpl_update_controller_update'
+  parent: 'system.admin_config_services'

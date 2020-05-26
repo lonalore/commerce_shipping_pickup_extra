@@ -1,0 +1,5 @@
+entity.pickup_item.add_form:
+  route_name: entity.pickup_item.add_form
+  title: 'Add Pickup item'
+  appears_on:
+    - entity.pickup_item.collection
