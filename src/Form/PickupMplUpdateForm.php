@@ -43,6 +43,7 @@ class PickupMplUpdateForm extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $msg = \Drupal::messenger();
 
+    _commerce_shipping_pickup_extra_update_mpl_post_point();
     _commerce_shipping_pickup_extra_update_mpl_post_office();
     _commerce_shipping_pickup_extra_update_mpl_pickup_point();
 

@@ -51,9 +51,9 @@ function commerce_shipping_pickup_extra_cron() {
     \Drupal::logger('commerce_shipping_pickup_extra')
       ->notice('commerce_shipping_pickup_extra ran');
 
-//    _commerce_shipping_pickup_extra_update_foxpost();
-//    _commerce_shipping_pickup_extra_update_mpl_post_office();
-//    _commerce_shipping_pickup_extra_update_mpl_pickup_point();
+    //    _commerce_shipping_pickup_extra_update_foxpost();
+    //    _commerce_shipping_pickup_extra_update_mpl_post_office();
+    //    _commerce_shipping_pickup_extra_update_mpl_pickup_point();
 
     \Drupal::state()
       ->set('commerce_shipping_pickup_extra.next_execution', \Drupal::time()
@@ -102,15 +102,46 @@ function _commerce_shipping_pickup_extra_update_foxpost() {
 }
 
 function _commerce_shipping_pickup_extra_update_mpl_post_office() {
-  $url = 'https://www.posta.hu/static/internet/download/Allando_postai_szolgaltatohelyek.xlsx';
-
   $storage = \Drupal::entityTypeManager()->getStorage('pickup_item');
 
-  $items = _commerce_shipping_pickup_extra_xlsx_to_array($url);
+  $items = _commerce_shipping_pickup_extra_xml_to_array('PM');
 
   if (!empty($items)) {
-    array_shift($items);
+    /** @var \Drupal\commerce_shipping_pickup_extra\Entity\PickupItemInterface[] $entities */
+    $entities = $storage->loadByProperties([
+      'method' => 'pickup_mpl_post_office',
+    ]);
 
+    foreach ($entities as $entity) {
+      $entity->delete();
+    }
+
+    foreach ($items as $item) {
+      $name = $item['name'] . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
+
+      $entity = $storage->create();
+      $entity->setName($name);
+      $entity->set('method', 'pickup_mpl_post_office');
+      $entity->set('address', [
+        [
+          'country_code'  => 'HU',
+          'organization'  => $item['name'],
+          'address_line1' => $item['address'],
+          'locality'      => $item['locality'],
+          'postal_code'   => $item['zipcode'],
+        ],
+      ]);
+      $entity->save();
+    }
+  }
+}
+
+function _commerce_shipping_pickup_extra_update_mpl_post_point() {
+  $storage = \Drupal::entityTypeManager()->getStorage('pickup_item');
+
+  $items = _commerce_shipping_pickup_extra_xml_to_array('PP');
+
+  if (!empty($items)) {
     /** @var \Drupal\commerce_shipping_pickup_extra\Entity\PickupItemInterface[] $entities */
     $entities = $storage->loadByProperties([
       'method' => 'pickup_mpl_postpoint',
@@ -121,11 +152,7 @@ function _commerce_shipping_pickup_extra_update_mpl_post_office() {
     }
 
     foreach ($items as $item) {
-      if (empty($item[0]) || empty($item[3]) || empty($item[4])) {
-        continue;
-      }
-
-      $name = $item[0] . ' (' . $item[3] . ' ' . $item[0] . ', ' . $item[4] . ')';
+      $name = $item['name'] . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
 
       $entity = $storage->create();
       $entity->setName($name);
@@ -133,10 +160,10 @@ function _commerce_shipping_pickup_extra_update_mpl_post_office() {
       $entity->set('address', [
         [
           'country_code'  => 'HU',
-          'organization'  => $item[2],
-          'address_line1' => $item[4],
-          'locality'      => $item[0],
-          'postal_code'   => $item[3],
+          'organization'  => $item['name'],
+          'address_line1' => $item['address'],
+          'locality'      => $item['locality'],
+          'postal_code'   => $item['zipcode'],
         ],
       ]);
       $entity->save();
@@ -145,15 +172,11 @@ function _commerce_shipping_pickup_extra_update_mpl_post_office() {
 }
 
 function _commerce_shipping_pickup_extra_update_mpl_pickup_point() {
-  $url = 'https://www.posta.hu/static/internet/download/Csomagautomata_lista_GPS_koordinatakkal.xlsx';
-
   $storage = \Drupal::entityTypeManager()->getStorage('pickup_item');
 
-  $items = _commerce_shipping_pickup_extra_xlsx_to_array($url);
+  $items = _commerce_shipping_pickup_extra_xml_to_array('CS');
 
   if (!empty($items)) {
-    array_shift($items);
-
     /** @var \Drupal\commerce_shipping_pickup_extra\Entity\PickupItemInterface[] $entities */
     $entities = $storage->loadByProperties([
       'method' => 'pickup_mpl_parcel_machine',
@@ -164,11 +187,7 @@ function _commerce_shipping_pickup_extra_update_mpl_pickup_point() {
     }
 
     foreach ($items as $item) {
-      if (empty($item[0]) || empty($item[1]) || empty($item[3]) || empty($item[4]) || empty($item[5])) {
-        continue;
-      }
-
-      $name = $item[4] . ' (' . $item[0] . ' ' . $item[1] . ', ' . $item[5] . ' ' . $item[6] . ' ' . $item[7] . ')';
+      $name = $item['name'] . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
 
       $entity = $storage->create();
       $entity->setName($name);
@@ -176,15 +195,56 @@ function _commerce_shipping_pickup_extra_update_mpl_pickup_point() {
       $entity->set('address', [
         [
           'country_code'  => 'HU',
-          'organization'  => $item[4],
-          'address_line1' => $item[5] . ' ' . $item[6] . ' ' . $item[7],
-          'locality'      => $item[1],
-          'postal_code'   => $item[0],
+          'organization'  => $item['name'],
+          'address_line1' => $item['address'],
+          'locality'      => $item['locality'],
+          'postal_code'   => $item['zipcode'],
         ],
       ]);
       $entity->save();
     }
   }
+}
+
+/**
+ * @param string $type
+ *   PM = posta;
+ *   PP = posta pont (MOL, Coop);
+ *   CS = csomagautomata
+ *
+ * @return array
+ */
+function _commerce_shipping_pickup_extra_xml_to_array($type = 'PM') {
+  // @see https://www.posta.hu/partnerextra_leiras
+  $url = 'http://httpmegosztas.posta.hu/PartnerExtra/Out/PostInfo2.xml';
+
+  $data = file_get_contents($url);
+  $data = simplexml_load_string($data);
+
+  if (empty($data)) {
+    return [];
+  }
+
+  $items = [];
+
+  foreach ($data as $item) {
+    if ($item->ServicePointType == $type) {
+      $attributes = $item->attributes();
+
+      $items[] = [
+        'name'     => (string) $item->name,
+        'locality' => (string) $item->city,
+        'address'  => implode(' ', [
+          (string) $item->street->name,
+          (string) $item->street->type,
+          (string) $item->street->houseNumber,
+        ]),
+        'zipcode'  => (string) $attributes['zipCode'],
+      ];
+    }
+  }
+
+  return $items;
 }
 
 /**
@@ -205,7 +265,8 @@ function _commerce_shipping_pickup_extra_xlsx_to_array($url) {
   if (!empty($content)) {
     $path = 'temporary://mpl.xlsx';
 
-    $uri = \Drupal::service('file_system')->saveData($content, $path, FileSystemInterface::EXISTS_REPLACE);
+    $uri = \Drupal::service('file_system')
+      ->saveData($content, $path, FileSystemInterface::EXISTS_REPLACE);
 
     if ($uri) {
       $uri = \Drupal::service('file_system')->realpath($uri);
