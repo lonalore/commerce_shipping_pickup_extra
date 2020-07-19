@@ -52,7 +52,7 @@ final class PickupFoxpostShipping extends ShippingMethodBase {
       $workflow_manager
     );
 
-    $this->services['default'] = new ShippingService('pickup_foxpost', $this->configuration['rate_label']);
+    $this->services['pickup_foxpost'] = new ShippingService('pickup_foxpost', $this->configuration['rate_label']);
   }
 
   /**
@@ -63,7 +63,7 @@ final class PickupFoxpostShipping extends ShippingMethodBase {
         'rate_label'       => '',
         'rate_description' => '',
         'rate_amount'      => NULL,
-        'services'         => ['default'],
+        'services'         => ['pickup_foxpost'],
       ] + parent::defaultConfiguration();
   }
 
@@ -123,7 +123,7 @@ final class PickupFoxpostShipping extends ShippingMethodBase {
     $rates = [];
     $rates[] = new ShippingRate([
       'shipping_method_id' => $this->parentEntity->id(),
-      'service'            => $this->services['default'],
+      'service'            => $this->services['pickup_foxpost'],
       'amount'             => Price::fromArray($this->configuration['rate_amount']),
       'description'        => $this->configuration['rate_description'],
     ]);

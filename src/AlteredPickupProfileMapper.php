@@ -39,11 +39,11 @@ class AlteredPickupProfileMapper implements AlteredPickupProfileMapperInterface 
     $dealers = $this->getDealers();
 
     $options = [];
-    foreach ($dealers as $dealer) {
+    foreach ($dealers as $dealer_id => $dealer) {
       if (!empty($shipping_method) && $dealer['shipping_method'] != $shipping_method) {
         continue;
       }
-      $options[] = $dealer['organization'];
+      $options[$dealer_id] = $dealer['organization'];
     }
 
     return [
@@ -71,7 +71,7 @@ class AlteredPickupProfileMapper implements AlteredPickupProfileMapperInterface 
       $address = $entity->get('address')->getValue();
       $address = reset($address);
 
-      $dealers[] = [
+      $dealers[$entity->id()] = [
         'shipping_method' => $method['value'],
         'country_code'    => $address['country_code'],
         'locality'        => $address['locality'],

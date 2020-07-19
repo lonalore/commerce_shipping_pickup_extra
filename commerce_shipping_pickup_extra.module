@@ -164,7 +164,7 @@ function _commerce_shipping_pickup_extra_update_mpl_pickup_point() {
     }
 
     foreach ($items as $item) {
-      if (empty($item[0]) || empty($item[1]) || empty($item[2]) || empty($item[3]) || empty($item[4]) || empty($item[5])) {
+      if (empty($item[0]) || empty($item[1]) || empty($item[3]) || empty($item[4]) || empty($item[5])) {
         continue;
       }
 

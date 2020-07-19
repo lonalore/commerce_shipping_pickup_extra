@@ -19,6 +19,7 @@ class PickupItemListBuilder extends EntityListBuilder {
   public function buildHeader() {
     $header['id'] = $this->t('Pickup item ID');
     $header['name'] = $this->t('Name');
+    $header['method'] = $this->t('Method');
     return $header + parent::buildHeader();
   }
 
@@ -33,6 +34,7 @@ class PickupItemListBuilder extends EntityListBuilder {
       'entity.pickup_item.edit_form',
       ['pickup_item' => $entity->id()]
     );
+    $row['method'] = $entity->get('method')->getValue()[0]['value'];
     return $row + parent::buildRow($entity);
   }
 

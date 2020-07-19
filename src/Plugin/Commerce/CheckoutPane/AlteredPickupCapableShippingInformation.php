@@ -57,8 +57,11 @@ final class AlteredPickupCapableShippingInformation extends ShippingInformation 
       ], $this->getShippingProfilePickup(TRUE));
 
       $pickup_method = self::getShippingMethod($pane_form, $form_state, $this->order);
-      $pickup_method = explode('--', $pickup_method);
-      $pickup_method = isset($pickup_method[1]) ? $pickup_method[1] : NULL;
+
+      if (strpos($pickup_method, '--') !== FALSE) {
+        $pickup_method = explode('--', $pickup_method);
+        $pickup_method = isset($pickup_method[1]) ? $pickup_method[1] : NULL;
+      }
     }
 
     $pane_form['shipping_profile'] = [
@@ -181,15 +184,16 @@ final class AlteredPickupCapableShippingInformation extends ShippingInformation 
     );
 
     if (empty($shipping_method)) {
-      /** @var \Drupal\commerce_shipping\Entity\ShipmentInterface $shipment */
-      $shipments = $order->get('shipments')->referencedEntities();
-      $shipment = reset($shipments);
-      $shipping_method = $shipment ? $shipment->getShippingMethod()
-        ->getPlugin()
-        ->getPluginId() : '';
+      $summary = \Drupal::service('commerce_shipping.order_shipment_summary')->build($order);
+      if (!empty($summary[0])) {
+        /** @var \Drupal\commerce_shipping\Entity\Shipment */
+        $shipment = $summary[0]['shipment']['#commerce_shipment'];
+        $shipping_method = $shipment->getShippingMethod();
+        $shipping_method = $shipping_method ? $shipping_method->getPlugin()->getPluginId() : NULL;
+      }
     }
 
-    return $shipping_method;
+    return !empty($shipping_method) ? $shipping_method : '';
   }
 
   /**
@@ -220,6 +224,17 @@ final class AlteredPickupCapableShippingInformation extends ShippingInformation 
     }
 
     return $profile;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function buildPaneSummary() {
+    $summary = [];
+    if ($this->isVisible()) {
+      $summary = $this->orderShipmentSummary->build($this->order, 'checkout');
+    }
+    return $summary;
   }
 
 }

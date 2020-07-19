@@ -52,7 +52,7 @@ final class PickupMplPostPointShipping extends ShippingMethodBase {
       $workflow_manager
     );
 
-    $this->services['default'] = new ShippingService('pickup_mpl_postpoint', $this->configuration['rate_label']);
+    $this->services['pickup_mpl_postpoint'] = new ShippingService('pickup_mpl_postpoint', $this->configuration['rate_label']);
   }
 
   /**
@@ -63,7 +63,7 @@ final class PickupMplPostPointShipping extends ShippingMethodBase {
         'rate_label'       => '',
         'rate_description' => '',
         'rate_amount'      => NULL,
-        'services'         => ['default'],
+        'services'         => ['pickup_mpl_postpoint'],
       ] + parent::defaultConfiguration();
   }
 
@@ -123,7 +123,7 @@ final class PickupMplPostPointShipping extends ShippingMethodBase {
     $rates = [];
     $rates[] = new ShippingRate([
       'shipping_method_id' => $this->parentEntity->id(),
-      'service'            => $this->services['default'],
+      'service'            => $this->services['pickup_mpl_postpoint'],
       'amount'             => Price::fromArray($this->configuration['rate_amount']),
       'description'        => $this->configuration['rate_description'],
     ]);
