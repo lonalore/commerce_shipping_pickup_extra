@@ -62,7 +62,7 @@ function commerce_shipping_pickup_extra_cron() {
 }
 
 function _commerce_shipping_pickup_extra_update_foxpost() {
-  $url = 'https://www1.foxpost.hu/foxpost_terminals.json';
+  $url = 'https://cdn.foxpost.hu/foxpost_terminals_extended_v3.json';
 
   $storage = \Drupal::entityTypeManager()->getStorage('pickup_item');
   $client = \Drupal::httpClient();
@@ -82,18 +82,18 @@ function _commerce_shipping_pickup_extra_update_foxpost() {
     }
 
     foreach ($items as $item) {
-      $parts = explode(' ', $item['address'], 3);
+      $name = $item['name'] . ' (' . $item['zip'] . ' ' . $item['city'] . ', ' . $item['street'] . ')';
 
       $entity = $storage->create();
-      $entity->setName($item['name']);
+      $entity->setName($name);
       $entity->set('method', 'pickup_foxpost');
       $entity->set('address', [
         [
           'country_code'  => 'HU',
           'organization'  => $item['name'],
-          'address_line1' => $parts[2],
-          'locality'      => $parts[1],
-          'postal_code'   => $parts[0],
+          'address_line1' => $item['street'],
+          'locality'      => $item['city'],
+          'postal_code'   => $item['zip'],
         ],
       ]);
       $entity->save();
