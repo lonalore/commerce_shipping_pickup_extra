@@ -37,6 +37,25 @@ interface PickupItemInterface extends ContentEntityInterface, EntityChangedInter
   public function setName($name);
 
   /**
+   * Gets the Pickup item name with address.
+   *
+   * @return string
+   *   Name of the Pickup item with address.
+   */
+  public function getNameWithAddress();
+
+  /**
+   * Sets the Pickup item name with address.
+   *
+   * @param string $name
+   *   The Pickup item name with address.
+   *
+   * @return \Drupal\commerce_shipping_pickup_extra\Entity\PickupItemInterface
+   *   The called Pickup item entity.
+   */
+  public function setNameWithAddress($name);
+
+  /**
    * Gets the Pickup item creation timestamp.
    *
    * @return int

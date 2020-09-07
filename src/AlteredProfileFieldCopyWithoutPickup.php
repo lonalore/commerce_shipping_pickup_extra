@@ -8,6 +8,7 @@ use Drupal\commerce_shipping\ProfileFieldCopy;
 use Drupal\commerce_shipping_pickup_extra\Plugin\Commerce\CheckoutPane\AlteredPickupCapableShippingInformation;
 use Drupal\Component\Utility\NestedArray;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Element;
 
 /**
  * If the a pickup method is selected, disable billing same as shipping.
@@ -46,6 +47,17 @@ final class AlteredProfileFieldCopyWithoutPickup extends ProfileFieldCopy {
     }
 
     return $parent;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function alterForm(array &$inline_form, FormStateInterface $form_state) {
+    parent::alterForm($inline_form, $form_state);
+
+    if (isset($inline_form['copy_fields']['enable'])) {
+      $inline_form['copy_fields']['enable']['#prefix'] = '<div class="field--label">' . $this->t('Billing information') . '</div>';
+    }
   }
 
 }

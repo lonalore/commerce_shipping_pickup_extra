@@ -36,24 +36,24 @@ function commerce_shipping_pickup_extra_cron() {
 
   // Default to an hourly interval. Of course, cron has to be running at least
   // hourly for this to work.
-  $interval = $cron_config->get('interval');
-  $interval = !empty($interval) ? $interval : 86400;
+  $interval = $cron_config->get('cron_interval');
+  $interval = !empty($interval) ? $interval : 0;
 
   // We usually don't want to act every time cron runs (which could be every
   // minute) so keep a time for the next run in the site state.
   $next_execution = \Drupal::state()
     ->get('commerce_shipping_pickup_extra.next_execution', 0);
 
-  if (\Drupal::time()->getRequestTime() >= $next_execution) {
+  if ($interval > 0 && \Drupal::time()->getRequestTime() >= $next_execution) {
     // This is a silly example of a cron job.
     // It just makes it obvious that the job has run without
     // making any changes to your database.
     \Drupal::logger('commerce_shipping_pickup_extra')
       ->notice('commerce_shipping_pickup_extra ran');
 
-    //    _commerce_shipping_pickup_extra_update_foxpost();
-    //    _commerce_shipping_pickup_extra_update_mpl_post_office();
-    //    _commerce_shipping_pickup_extra_update_mpl_pickup_point();
+    _commerce_shipping_pickup_extra_update_foxpost();
+    _commerce_shipping_pickup_extra_update_mpl_post_office();
+    _commerce_shipping_pickup_extra_update_mpl_pickup_point();
 
     \Drupal::state()
       ->set('commerce_shipping_pickup_extra.next_execution', \Drupal::time()
@@ -82,15 +82,20 @@ function _commerce_shipping_pickup_extra_update_foxpost() {
     }
 
     foreach ($items as $item) {
-      $name = $item['name'] . ' (' . $item['zip'] . ' ' . $item['city'] . ', ' . $item['street'] . ')';
+      $item_name = $item['name'];
+      $item_name = str_replace('ker.', 'kerület', $item_name);
+
+      $name = $item_name . ' (' . $item['zip'] . ' ' . $item['city'] . ', ' . $item['street'] . ')';
+      // $name = $item['name'];
 
       $entity = $storage->create();
-      $entity->setName($name);
+      $entity->setName($item_name);
+      $entity->setNameWithAddress($name);
       $entity->set('method', 'pickup_foxpost');
       $entity->set('address', [
         [
           'country_code'  => 'HU',
-          'organization'  => $item['name'],
+          'organization'  => $item_name,
           'address_line1' => $item['street'],
           'locality'      => $item['city'],
           'postal_code'   => $item['zip'],
@@ -117,10 +122,13 @@ function _commerce_shipping_pickup_extra_update_mpl_post_office() {
     }
 
     foreach ($items as $item) {
-      $name = $item['name'] . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
+      $item_name = $item['name'];
+
+      $name = $item_name . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
 
       $entity = $storage->create();
-      $entity->setName($name);
+      $entity->setName($item_name);
+      $entity->setNameWithAddress($name);
       $entity->set('method', 'pickup_mpl_post_office');
       $entity->set('address', [
         [
@@ -152,10 +160,13 @@ function _commerce_shipping_pickup_extra_update_mpl_post_point() {
     }
 
     foreach ($items as $item) {
-      $name = $item['name'] . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
+      $item_name = $item['name'];
+
+      $name = $item_name . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
 
       $entity = $storage->create();
-      $entity->setName($name);
+      $entity->setName($item_name);
+      $entity->setNameWithAddress($name);
       $entity->set('method', 'pickup_mpl_postpoint');
       $entity->set('address', [
         [
@@ -187,10 +198,13 @@ function _commerce_shipping_pickup_extra_update_mpl_pickup_point() {
     }
 
     foreach ($items as $item) {
-      $name = $item['name'] . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
+      $item_name = $item['name'];
+
+      $name = $item_name . ' (' . $item['zipcode'] . ' ' . $item['locality'] . ', ' . $item['address'] . ')';
 
       $entity = $storage->create();
-      $entity->setName($name);
+      $entity->setName($item_name);
+      $entity->setNameWithAddress($name);
       $entity->set('method', 'pickup_mpl_parcel_machine');
       $entity->set('address', [
         [
@@ -230,6 +244,10 @@ function _commerce_shipping_pickup_extra_xml_to_array($type = 'PM') {
   foreach ($data as $item) {
     if ($item->ServicePointType == $type) {
       $attributes = $item->attributes();
+
+      if (empty($attributes['isPostPoint'])) {
+        continue;
+      }
 
       $items[] = [
         'name'     => (string) $item->name,

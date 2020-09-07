@@ -23,3 +23,10 @@ commerce_shipping_pickup_extra.pickup_item_mpl_update_controller_update:
   description: 'Update MPL pickup points'
   route_name: 'commerce_shipping_pickup_extra.pickup_item_mpl_update_controller_update'
   parent: 'system.admin_config_services'
+
+commerce_shipping_pickup_extra.settings_form:
+  title: 'Pickup - Settings'
+  description: 'Configure Pickup'
+  route_name: 'commerce_shipping_pickup_extra.settings_form'
+  parent: 'system.admin_config_services'
+  weight: 99

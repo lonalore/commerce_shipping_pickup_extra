@@ -84,6 +84,21 @@ class PickupItem extends ContentEntityBase implements PickupItemInterface {
   /**
    * {@inheritdoc}
    */
+  public function getNameWithAddress() {
+    return $this->get('name_with_address')->value;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setNameWithAddress($name) {
+    $this->set('name_with_address', $name);
+    return $this;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
   public function getCreatedTime() {
     return $this->get('created')->value;
   }
@@ -107,6 +122,26 @@ class PickupItem extends ContentEntityBase implements PickupItemInterface {
 
     $fields['name'] = BaseFieldDefinition::create('string')
       ->setLabel(t('Name'))
+      ->setSettings([
+        'max_length'      => 255,
+        'text_processing' => 0,
+      ])
+      ->setDefaultValue('')
+      ->setDisplayOptions('view', [
+        'label'  => 'above',
+        'type'   => 'string',
+        'weight' => -4,
+      ])
+      ->setDisplayOptions('form', [
+        'type'   => 'string_textfield',
+        'weight' => -4,
+      ])
+      ->setDisplayConfigurable('form', TRUE)
+      ->setDisplayConfigurable('view', TRUE)
+      ->setRequired(TRUE);
+
+    $fields['name_with_address'] = BaseFieldDefinition::create('string')
+      ->setLabel(t('Name with address'))
       ->setSettings([
         'max_length'      => 255,
         'text_processing' => 0,

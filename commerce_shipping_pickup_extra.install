@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\Core\Field\BaseFieldDefinition;
+
 /**
  * Implements hook_update_N().
  */
@@ -8,4 +10,33 @@ function commerce_shipping_pickup_extra_update_8001(&$sandbox) {
   \Drupal::entityDefinitionUpdateManager()
     ->installEntityType(\Drupal::entityTypeManager()
       ->getDefinition('pickup_item'));
+}
+
+/**
+ * Implements hook_update_N().
+ */
+function commerce_shipping_pickup_extra_update_8002(&$sandbox) {
+  $um = \Drupal::entityDefinitionUpdateManager();
+
+  $storage_definition = BaseFieldDefinition::create('string')
+    ->setLabel(t('Name with address'))
+    ->setSettings([
+      'max_length'      => 255,
+      'text_processing' => 0,
+    ])
+    ->setDefaultValue('')
+    ->setDisplayOptions('view', [
+      'label'  => 'above',
+      'type'   => 'string',
+      'weight' => -4,
+    ])
+    ->setDisplayOptions('form', [
+      'type'   => 'string_textfield',
+      'weight' => -4,
+    ])
+    ->setDisplayConfigurable('form', TRUE)
+    ->setDisplayConfigurable('view', TRUE)
+    ->setRequired(TRUE);
+
+  $um->installFieldStorageDefinition('name_with_address', 'pickup_item', 'pickup_item', $storage_definition);
 }

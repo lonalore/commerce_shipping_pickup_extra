@@ -36,7 +36,7 @@ class AlteredPickupProfileMapper implements AlteredPickupProfileMapperInterface 
    * {@inheritdoc}
    */
   public function buildFormElement(ProfileInterface $profile, $shipping_method): array {
-    $dealers = $this->getDealers();
+    $dealers = $this->getDealers(FALSE);
 
     $options = [];
     foreach ($dealers as $dealer_id => $dealer) {
@@ -54,15 +54,24 @@ class AlteredPickupProfileMapper implements AlteredPickupProfileMapperInterface 
     ];
   }
 
-  public function getDealers() {
+  public function getDealers($name_without_address = TRUE) {
     $dealers = [];
+
+    $query = \Drupal::entityTypeManager()
+      ->getStorage('pickup_item')
+      ->getQuery();
+
+    $query->condition('status', 1);
+    $query->sort('name', 'ASC');
+    $query->sort('address.locality', 'ASC');
+    $query->sort('address.address_line1', 'ASC');
+
+    $ids = $query->execute();
 
     /** @var \Drupal\commerce_shipping_pickup_extra\Entity\PickupItemInterface[] $entities */
     $entities = \Drupal::entityTypeManager()
       ->getStorage('pickup_item')
-      ->loadByProperties([
-        'status' => 1,
-      ]);
+      ->loadMultiple($ids);
 
     foreach ($entities as $entity) {
       $method = $entity->get('method')->getValue();
@@ -77,7 +86,7 @@ class AlteredPickupProfileMapper implements AlteredPickupProfileMapperInterface 
         'locality'        => $address['locality'],
         'postal_code'     => $address['postal_code'],
         'address_line1'   => $address['address_line1'],
-        'organization'    => $entity->label(),
+        'organization'    => $name_without_address ? $entity->getName() : $entity->getNameWithAddress(),
       ];
     }
 

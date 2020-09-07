@@ -1,1 +1,2 @@
-interval: 86400
+commerce_shipping_pickup_extra.settings:
+  cron_interval: 0
